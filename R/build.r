@@ -178,7 +178,7 @@ build_site <- function(pkg = ".",
   )
   build_articles(pkg, path = file.path(path, "articles"), depth = 1L, encoding = encoding)
   build_news(pkg, path = file.path(path, "news"), depth = 1L)
-  build_search_index(pkg, path = path)
+  #build_search_index(pkg, path = path)
 
   if (preview) {
     preview_site(path)

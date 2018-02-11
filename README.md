@@ -3,7 +3,7 @@
 pkgdown
 =======
 
-[![Travis-CI Build Status](https://travis-ci.org/hadley/pkgdown.svg?branch=master)](https://travis-ci.org/hadley/pkgdown) [![CRAN\_Status\_Badge](http://www.r-pkg.org/badges/version/pkgdown)](https://cran.r-project.org/package=pkgdown) [![Coverage Status](https://img.shields.io/codecov/c/github/hadley/pkgdown/master.svg)](https://codecov.io/github/hadley/pkgdown?branch=master)
+[![Travis-CI Build Status](https://travis-ci.org/r-lib/pkgdown.svg?branch=master)](https://travis-ci.org/r-lib/pkgdown) [![CRAN\_Status\_Badge](http://www.r-pkg.org/badges/version/pkgdown)](https://cran.r-project.org/package=pkgdown) [![Coverage Status](https://img.shields.io/codecov/c/github/r-lib/pkgdown/master.svg)](https://codecov.io/github/r-lib/pkgdown?branch=master)
 
 pkgdown is designed to make it quick and easy to build a website for your package. You can see pkgdown in action at <http://pkgdown.r-lib.org/>: this is the output of pkgdown applied to the latest version of pkgdown. Learn more in `vignette("pkgdown")` or `?build_site`.
 
@@ -14,7 +14,7 @@ pkgdown is not currently available from CRAN, but you can install the developmen
 
 ``` r
 # install.packages("devtools")
-devtools::install_github("hadley/pkgdown")
+devtools::install_github("r-lib/pkgdown")
 ```
 
 Usage

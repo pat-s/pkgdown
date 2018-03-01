@@ -62,7 +62,7 @@ as_html.LIST <-  flatten_text
 
 #' @export
 as_html.character <- function(x, ..., escape = TRUE) {
-  # src_highlight (used by usage & examples) also does escaping
+  # src_highlight (used by usage, examples, and out) also does escaping
   # so we need some way to turn it off when needed.
   if (escape) {
     escape_html(x)
@@ -371,13 +371,18 @@ as_html.tag_dQuote <-       tag_wrapper("&#8220;", "&#8221;")
 as_html.tag_sQuote <-       tag_wrapper("&#8216;", "&#8217;")
 
 #' @export
-as_html.tag_code <-         function(x, ...) {
+as_html.tag_code <-         function(x, ..., auto_link = TRUE) {
   text <- flatten_text(x, ...)
+
+  if (!auto_link) {
+    return(paste0("<code>", text, "</code>"))
+  }
 
   expr <- tryCatch(
     parse(text = text)[[1]],
     error = function(e) NULL
   )
+
   href <- href_expr(expr)
   paste0("<code>", a(text, href = href), "</code>")
 }
@@ -387,6 +392,7 @@ as_html.tag_kbd <-          tag_wrapper("<kbd>", "</kbd>")
 as_html.tag_samp <-         tag_wrapper('<samp>',"</samp>")
 #' @export
 as_html.tag_verb <-         tag_wrapper("<code>", "</code>")
+
 #' @export
 as_html.tag_pkg <-          tag_wrapper('<span class="pkg">',"</span>")
 #' @export
@@ -410,6 +416,9 @@ as_html.tag_dfn <-          tag_wrapper("<dfn>", "</dfn>")
 as_html.tag_cite <-         tag_wrapper("<cite>", "</cite>")
 #' @export
 as_html.tag_acroynm <-      tag_wrapper('<acronym>','</acronym>')
+
+#' @export
+as_html.tag_out <- function(x, ...) flatten_text(x, ..., escape = FALSE)
 
 # Insertions --------------------------------------------------------------
 
@@ -442,8 +451,6 @@ as_html.tag_enc <- function(x, ...) {
 as_html.NULL <-         function(x, ...) ""
 #' @export
 as_html.tag_concept <-  function(x, ...) ""
-#' @export
-as_html.tag_out <-      function(x, ...) ""
 #' @export
 as_html.tag_tab <-      function(x, ...) ""
 #' @export

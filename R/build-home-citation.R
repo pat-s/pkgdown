@@ -3,12 +3,23 @@ has_citation <- function(path = ".") {
   file.exists(file.path(path, 'inst/CITATION'))
 }
 
+create_meta <- function(path) {
+  path <- file.path(path, "DESCRIPTION")
+
+  dcf <- read.dcf(path)
+  meta <- as.list(dcf[1, ])
+
+  meta
+}
+
 read_citation <- function(path = ".") {
   if (!has_citation(path)) {
     return(character())
   }
-  path <- file.path(path, 'inst/CITATION')
-  utils::readCitationFile(path)
+  meta <- create_meta(path)
+  cit_path <- file.path(path, 'inst/CITATION')
+
+  utils::readCitationFile(cit_path, meta = meta)
 }
 
 data_home_sidebar_citation <- function(pkg = ".") {
@@ -40,7 +51,7 @@ build_citation_authors <- function(pkg = ".", path = "docs", depth = 0L) {
   data <- list(
     pagetitle = "Citation and Authors",
     citations = data_citations(pkg),
-    authors = data_authors(pkg)$all
+    authors = unname(data_authors(pkg)$all)
   )
 
   render_page(pkg, "citation-authors", data, file.path(path, "authors.html"), depth = depth)

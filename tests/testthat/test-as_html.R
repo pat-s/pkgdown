@@ -42,6 +42,10 @@ test_that("tabular converted to html", {
   expect_equal(rd2html(table), expectation)
 })
 
+test_that("out is for raw html", {
+  expect_equal(rd2html("\\out{<hr />}"), "<hr />")
+})
+
 # links -------------------------------------------------------------------
 
 test_that("href orders arguments correctly", {
@@ -241,4 +245,9 @@ test_that("multiline titles are collapsed", {
 test_that("titles can contain other markup", {
   rd <- rd_text("\\title{\\strong{x}}", fragment = FALSE)
   expect_equal(extract_title(rd), "<strong>x</strong>")
+})
+
+test_that("titles don't get autolinked code", {
+  rd <- rd_text("\\title{\\code{foo()}}", fragment = FALSE)
+  expect_equal(extract_title(rd), "<code>foo()</code>")
 })

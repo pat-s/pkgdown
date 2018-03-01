@@ -25,7 +25,8 @@ path.}
 
 \item{mathjax}{Use mathjax to render math symbols?}
 
-\item{preview}{If \code{TRUE}, will preview freshly generated site}
+\item{preview}{If \code{TRUE}, or \code{is.na(preview) && interactive()}, will preview
+freshly generated section in browser.}
 
 \item{seed}{Seed used to initialize so that random examples are
 reproducible.}
@@ -44,6 +45,8 @@ reproducible.}
 
 See the documentation for the each function to learn how to control
 that aspect of the site.
+
+Note if names of generated files were changed, you will need to use \link{clean_site} first to clean up orphan files.
 }
 \section{Custom CSS/JS}{
 
@@ -51,6 +54,13 @@ If you want to do minor customisation of your pkgdown site, the easiest
 way is to add \code{pkgdown/extra.css} and \code{pkgdown/extra.js}. These
 will be automatically copied to \code{docs/} and inserted into the
 \code{<HEAD>} after the default pkgdown CSS and JSS.
+}
+
+\section{Favicon}{
+
+If you include you package logo in the standard location of
+\code{man/figures/logo.png}, a favicon will be automatically created for
+you.
 }
 
 \section{YAML config}{

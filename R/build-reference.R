@@ -90,16 +90,12 @@ build_reference <- function(pkg = ".",
                             mathjax = TRUE,
                             seed = 1014,
                             path = "docs/reference",
-                            depth = 1L
+                            depth = 1L,
+                            preview = NA
                             ) {
-  old <- set_pkgdown_env("true")
-  on.exit(set_pkgdown_env(old))
-
-  pkg <- as_pkgdown(pkg)
+  pkg <- section_init(pkg, depth = depth)
   path <- rel_path(path, pkg$path)
-
   rule("Building function reference")
-  scoped_package_context(pkg$package, pkg$topic_index, pkg$article_index)
 
   if (!is.null(path)) {
     mkdir(path)
@@ -109,7 +105,7 @@ build_reference <- function(pkg = ".",
   figures_path <- file.path(pkg$path, "man", "figures")
   if (file.exists(figures_path) && !is.null(path)) {
     out_path <- file.path(path, "figures")
-    message("Copying man/figures/")
+    cat_line("Copying 'man/figures/'")
     mkdir(out_path)
     copy_dir(figures_path, out_path)
   }
@@ -136,7 +132,8 @@ build_reference <- function(pkg = ".",
     run_dont_run = run_dont_run,
     mathjax = mathjax
   )
-  invisible()
+
+  section_fin(path, preview = preview)
 }
 
 #' @export
@@ -178,7 +175,7 @@ build_reference_topic <- function(topic,
   if (lazy && !out_of_date(in_path, out_path))
     return(invisible())
 
-  message("Processing ", topic$file_in)
+  cat_line("Processing '", topic$file_in, "'")
   scoped_file_context(rdname = gsub("\\.Rd$", "", topic$file_in), depth = depth)
 
   data <- data_reference_topic(
@@ -229,6 +226,7 @@ data_reference_topic <- function(topic,
   # Sections that contain arbitrary text and need cross-referencing
 
   out$description <- as_data(tags$tag_description[[1]])
+  out$opengraph <- list(description = strip_html_tags(out$description$contents))
   out$usage <- as_data(tags$tag_usage[[1]])
   out$arguments <- as_data(tags$tag_arguments[[1]])
   if (length(out$arguments)) {
@@ -264,6 +262,7 @@ add_slug <- function(x) {
 }
 
 make_slug <- function(x) {
+  x <- strip_html_tags(x)
   x <- tolower(x)
   x <- gsub("[^a-z]+", "-", x)
   x

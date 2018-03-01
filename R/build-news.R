@@ -43,18 +43,15 @@
 build_news <- function(pkg = ".",
                        path = "docs/news",
                        one_page = TRUE,
-                       depth = 1L) {
-  old <- set_pkgdown_env("true")
-  on.exit(set_pkgdown_env(old))
-
-  pkg <- as_pkgdown(pkg)
+                       depth = 1L,
+                       preview = NA) {
+  pkg <- section_init(pkg, depth = depth)
   path <- rel_path(path, pkg$path)
+
   if (!has_news(pkg$path))
     return()
 
   rule("Building news")
-  scoped_package_context(pkg$package, pkg$topic_index, pkg$article_index)
-  scoped_file_context(depth = depth)
   mkdir(path)
 
   if (one_page) {
@@ -63,7 +60,7 @@ build_news <- function(pkg = ".",
     build_news_multi(pkg, path, depth)
   }
 
-  invisible()
+  section_fin(path, preview = preview)
 }
 
 build_news_single <- function(pkg, path, depth) {
@@ -132,6 +129,10 @@ data_news <- function(pkg = ".", depth = 1L) {
     xml2::xml_find_first(".//h1|h2") %>%
     xml2::xml_text(trim = TRUE)
 
+  if (any(is.na(titles))) {
+    stop("Invalid NEWS.md: bad nesting of titles", call. = FALSE)
+  }
+
   anchors <- sections %>%
     xml2::xml_attr("id")
 
@@ -176,12 +177,13 @@ is_dev <- function(version) {
 }
 
 add_github_links <- function(x, pkg) {
-  gh_link <- github_link(pkg$path)
-  if(is.null(gh_link)) return(x)
-
   user_link <- paste0("<a href='http://github.com/\\1'>@\\1</a>")
   x <- gsub("@(\\w+)", user_link, x)
 
+  gh_link <- github_link(pkg$path)
+  if (is.null(gh_link)) {
+    return(x)
+  }
   gh_link_href <- github_link(pkg$path)$href
   issue_link <- paste0("<a href='", gh_link_href, "/issues/\\1'>#\\1</a>")
   x <- gsub("#(\\d+)", issue_link, x)

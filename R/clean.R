@@ -4,16 +4,15 @@
 #'
 #' @inheritParams build_site
 #' @export
-clean_site <- function(pkg = ".", path = "docs") {
+clean_site <- function(pkg = ".") {
   pkg <- as_pkgdown(pkg)
-  path <- rel_path(path, pkg$path)
 
-  top_level <- fs::dir_ls(path)
+  top_level <- dir_ls(pkg$dst_path)
   top_level <- top_level[basename(top_level) != "CNAME"]
 
-  is_dir <- fs::is_dir(top_level)
-  fs::dir_delete(top_level[is_dir])
-  fs::file_delete(top_level[!is_dir])
+  is_dir <- is_dir(top_level)
+  dir_delete(top_level[is_dir])
+  file_delete(top_level[!is_dir])
 
   invisible(TRUE)
 }

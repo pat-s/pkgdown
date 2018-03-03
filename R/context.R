@@ -1,3 +1,26 @@
+section_init <- function(pkg, depth, scope = parent.frame()) {
+  pkg <- as_pkgdown(pkg)
+
+  rstudio_save_all()
+  scoped_in_pkgdown(scope = scope)
+
+  scoped_package_context(pkg$package, pkg$topic_index, pkg$article_index, scope = scope)
+  scoped_file_context(depth = depth, scope = scope)
+
+  pkg
+}
+
+section_fin <- function(pkg, path, preview = NA) {
+  if (is.na(preview)) {
+    preview <- interactive()
+  }
+
+  if (preview) {
+    utils::browseURL(path(pkg$dst_path, path, "index.html"))
+  }
+
+  invisible()
+}
 
 # Manage current topic index ----------------------------------------------------
 

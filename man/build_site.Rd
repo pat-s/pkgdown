@@ -7,9 +7,9 @@
 \usage{
 build_site(pkg = ".", path = "docs", examples = TRUE,
   run_dont_run = FALSE, mathjax = TRUE, preview = interactive(),
-  seed = 1014, encoding = "UTF-8")
+  seed = 1014)
 
-init_site(pkg = ".", path = "docs")
+init_site(pkg = ".")
 }
 \arguments{
 \item{pkg}{Path to source package. If R working directory is not
@@ -30,8 +30,6 @@ freshly generated section in browser.}
 
 \item{seed}{Seed used to initialize so that random examples are
 reproducible.}
-
-\item{encoding}{The encoding of the input files.}
 }
 \description{
 \code{build_site()} is a convenient wrapper around five functions:
@@ -66,7 +64,11 @@ you.
 \section{YAML config}{
 
 There are four top-level YAML settings that affect the entire site:
-\code{url}, \code{title}, \code{template}, and \code{navbar}.
+\code{destination}, \code{url}, \code{title}, \code{template}, and \code{navbar}.
+
+\code{destination} controls where the site will be generated. It defaults to
+\code{docs/} (for GitHub pages), but you can override if desired. Relative
+paths will be taken relative to the package root.
 
 \code{url} optionally specifies the url where the site will be published.
 If you supply this, other pkgdown sites will link to your site when needed,

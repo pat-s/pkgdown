@@ -177,6 +177,7 @@ add_github_links <- function(x, pkg) {
   if (is.null(gh_link)) {
     return(x)
   }
+
   gh_link_href <- github_link(pkg$src_path)$href
   issue_link <- paste0("<a href='", gh_link_href, "/issues/\\1'>#\\1</a>")
   x <- gsub("#(\\d+)", issue_link, x)

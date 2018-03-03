@@ -1,21 +1,20 @@
-build_home_index <- function(pkg, path, depth = 0L, encoding = "UTF-8") {
+build_home_index <- function(pkg) {
   scoped_package_context(pkg$package, pkg$topic_index, pkg$article_index)
-  scoped_file_context(depth = depth)
+  scoped_file_context(depth = 0)
 
   data <- data_home(pkg)
   data$opengraph <- list(description = pkg$desc$get("Description")[[1]])
 
-
   if (is.null(data$path)) {
     data$index <- linkify(pkg$desc$get("Description")[[1]])
-    render_page(pkg, "home", data, out_path(path, "index.html"), depth = depth)
+    render_page(pkg, "home", data, "index.html")
   } else {
     file_name <- tools::file_path_sans_ext(basename(data$path))
     file_ext <- tools::file_ext(data$path)
 
     if (file_ext == "md") {
-      data$index <- markdown(path = data$path, depth = 0L)
-      render_page(pkg, "home", data, out_path(path, "index.html"), depth = depth)
+      data$index <- markdown(path = data$path)
+      render_page(pkg, "home", data, "index.html")
     } else if (file_ext == "Rmd") {
       if (identical(file_name, "README")) {
         # Render once so that .md is up to date
@@ -27,33 +26,31 @@ build_home_index <- function(pkg, path, depth = 0L, encoding = "UTF-8") {
               output_format = "github_document",
               output_options = list(html_preview = FALSE),
               quiet = TRUE,
-              encoding = encoding,
+              encoding = "UTF-8",
               envir = globalenv()
             )
           },
           args = list(
-            input = data$path,
-            encoding = encoding
+            input = data$path
           )
         )
       }
 
-      input <- file.path(path, basename(data$path))
-      file.copy(data$path, input)
-      on.exit(unlink(input))
+      input <- path(pkg$dst_path, path_file(data$path))
+      file_copy(data$path, input, overwrite = TRUE)
+      on.exit(file_delete(input))
 
       render_rmd(pkg, input, "index.html",
-        depth = depth,
+        depth = 0L,
         data = data,
         toc = FALSE,
-        strip_header = TRUE,
-        encoding = encoding
+        strip_header = TRUE
       )
     }
   }
 
   update_homepage_html(
-    out_path(path, "index.html"),
+    path(pkg$dst_path, "index.html"),
     isTRUE(pkg$meta$home$strip_header)
   )
 }
@@ -70,7 +67,7 @@ update_homepage_html <- function(path, strip_header = FALSE) {
 data_home <- function(pkg = ".") {
   pkg <- as_pkgdown(pkg)
 
-  path <- find_first_existing(pkg$path,
+  path <- find_first_existing(pkg$src_path,
     c("index.Rmd", "README.Rmd", "index.md", "README.md")
   )
 

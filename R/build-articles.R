@@ -46,43 +46,35 @@
 #' @param pkg Path to source package. If R working directory is not
 #'     set to the source directory, then pkg must be a fully qualified
 #'     path to the source directory (not a relative path).
-#' @param path Output path. Relative paths are taken relative to the
-#'     `pkg` directory.
-#' @param depth Depth of path relative to root of documentation.  Used
-#'     to adjust relative links in the navbar.
-#' @param encoding The encoding of the input files.
 #' @param quiet Set to `FALSE` to display output of knitr and
 #'   pandoc. This is useful when debugging.
 #' @param preview If `TRUE`, or `is.na(preview) && interactive()`, will preview
 #'   freshly generated section in browser.
 #' @export
 build_articles <- function(pkg = ".",
-                           path = "docs/articles",
-                           depth = 1L,
-                           encoding = "UTF-8",
                            quiet = TRUE,
                            preview = NA) {
-  pkg <- section_init(pkg, depth = depth)
-  path <- rel_path(path, pkg$path)
+  pkg <- section_init(pkg, depth = 1L)
 
   if (nrow(pkg$vignettes) == 0L) {
     return(invisible())
   }
 
   rule("Building articles")
-  mkdir(path)
+  dir_create(path(pkg$dst_path, "articles"))
 
   # copy everything from vignettes/ to docs/articles
   copy_dir(
-    file.path(pkg$path, "vignettes"), path,
+    path(pkg$src_path, "vignettes"),
+    path(pkg$dst_path, "articles"),
     exclude_matching = "rsconnect"
   )
 
   # Render each Rmd then delete them
   articles <- tibble::tibble(
-    input = file.path(path, pkg$vignettes$file_in),
+    input = path(pkg$dst_path, "articles", pkg$vignettes$file_in),
     output_file = pkg$vignettes$file_out,
-    depth = pkg$vignettes$vig_depth + depth
+    depth = pkg$vignettes$vig_depth + 1L
   )
   data <- list(
     pagetitle = "$title$",
@@ -91,24 +83,23 @@ build_articles <- function(pkg = ".",
   purrr::pwalk(articles, render_rmd,
     pkg = pkg,
     data = data,
-    encoding = encoding,
     quiet = quiet
   )
-  purrr::walk(articles$input, unlink)
 
-  build_articles_index(pkg, path = path, depth = depth)
+  file_delete(articles$input)
 
-  section_fin(path, preview = preview)
+  build_articles_index(pkg)
+
+  section_fin(pkg, "articles", preview = preview)
 }
 
 render_rmd <- function(pkg,
                        input,
                        output_file,
+                       depth = 0L,
                        strip_header = FALSE,
                        data = list(),
                        toc = TRUE,
-                       depth = 1L,
-                       encoding = "UTF-8",
                        quiet = TRUE) {
 
   cat_line("Building article '", output_file, "'")
@@ -116,7 +107,7 @@ render_rmd <- function(pkg,
   scoped_file_context(depth = depth)
 
   format <- build_rmarkdown_format(pkg, depth = depth, data = data, toc = toc)
-  on.exit(unlink(format$path), add = TRUE)
+  on.exit(file_delete(format$path), add = TRUE)
 
   path <- callr::r_safe(
     function(...) rmarkdown::render(...),
@@ -125,12 +116,12 @@ render_rmd <- function(pkg,
       output_format = format$format,
       output_file = basename(output_file),
       quiet = quiet,
-      encoding = encoding,
+      encoding = "UTF-8",
       envir = globalenv()
     ),
     show = !quiet
   )
-  update_rmarkdown_html(path, strip_header = strip_header, depth = depth)
+  update_rmarkdown_html(path, strip_header = strip_header)
 }
 
 build_rmarkdown_format <- function(pkg = ".",
@@ -153,9 +144,9 @@ build_rmarkdown_format <- function(pkg = ".",
   )
 }
 
-update_rmarkdown_html <- function(path, strip_header = FALSE, depth = 1L) {
+update_rmarkdown_html <- function(path, strip_header = FALSE) {
   html <- xml2::read_html(path, encoding = "UTF-8")
-  tweak_rmarkdown_html(html, strip_header = strip_header, depth = depth)
+  tweak_rmarkdown_html(html, strip_header = strip_header)
 
   xml2::write_html(html, path, format = FALSE)
   path
@@ -163,22 +154,21 @@ update_rmarkdown_html <- function(path, strip_header = FALSE, depth = 1L) {
 
 # Articles index ----------------------------------------------------------
 
-build_articles_index <- function(pkg = ".", path = NULL, depth = 1L) {
+build_articles_index <- function(pkg = ".") {
   render_page(
     pkg,
     "vignette-index",
-    data = data_articles_index(pkg, depth = depth),
-    path = out_path(path, "index.html"),
-    depth = depth
+    data = data_articles_index(pkg),
+    path = path("articles", "index.html")
   )
 }
 
-data_articles_index <- function(pkg = ".", depth = 1L) {
+data_articles_index <- function(pkg = ".") {
   pkg <- as_pkgdown(pkg)
 
   meta <- pkg$meta$articles %||% default_articles_index(pkg)
   sections <- meta %>%
-    purrr::map(data_articles_index_section, pkg = pkg, depth = depth) %>%
+    purrr::map(data_articles_index_section, pkg = pkg) %>%
     purrr::compact()
 
   # Check for unlisted vignettes
@@ -204,7 +194,7 @@ data_articles_index <- function(pkg = ".", depth = 1L) {
   ))
 }
 
-data_articles_index_section <- function(section, pkg, depth = 1L) {
+data_articles_index_section <- function(section, pkg) {
   if (!set_contains(names(section), c("title", "contents"))) {
     warning(
       "Section must have components `title`, `contents`",
@@ -225,7 +215,7 @@ data_articles_index_section <- function(section, pkg, depth = 1L) {
 
   list(
     title = section$title,
-    desc = markdown_text(section$desc, depth = depth),
+    desc = markdown_text(section$desc),
     class = section$class,
     contents = purrr::transpose(contents)
   )

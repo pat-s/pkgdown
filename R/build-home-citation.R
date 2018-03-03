@@ -1,10 +1,10 @@
 
 has_citation <- function(path = ".") {
-  file.exists(file.path(path, 'inst/CITATION'))
+  file_exists(path(path, 'inst/CITATION'))
 }
 
 create_meta <- function(path) {
-  path <- file.path(path, "DESCRIPTION")
+  path <- path(path, "DESCRIPTION")
 
   dcf <- read.dcf(path)
   meta <- as.list(dcf[1, ])
@@ -17,7 +17,7 @@ read_citation <- function(path = ".") {
     return(character())
   }
   meta <- create_meta(path)
-  cit_path <- file.path(path, 'inst/CITATION')
+  cit_path <- path(path, 'inst/CITATION')
 
   utils::readCitationFile(cit_path, meta = meta)
 }
@@ -25,19 +25,18 @@ read_citation <- function(path = ".") {
 data_home_sidebar_citation <- function(pkg = ".") {
   pkg <- as_pkgdown(pkg)
 
-  if (!has_citation(pkg$path)) {
+  if (!has_citation(pkg$src_path)) {
     return(character())
   }
 
-  name <- pkg$desc$get("Package")[[1]]
-  citation <- paste0("<a href='authors.html'>Citing ", name, "</li>")
+  citation <- paste0("<a href='authors.html'>Citing ", pkg$package, "</li>")
 
   list_with_heading(citation, "Citation")
 }
 
 data_citations <- function(pkg = ".") {
   pkg <- as_pkgdown(pkg)
-  cit <- read_citation(pkg$path)
+  cit <- read_citation(pkg$src_path)
 
   list(
     html = format(cit, style = "html"),
@@ -45,7 +44,7 @@ data_citations <- function(pkg = ".") {
   ) %>% purrr::transpose()
 }
 
-build_citation_authors <- function(pkg = ".", path = "docs", depth = 0L) {
+build_citation_authors <- function(pkg = ".") {
   pkg <- as_pkgdown(pkg)
 
   data <- list(
@@ -54,5 +53,5 @@ build_citation_authors <- function(pkg = ".", path = "docs", depth = 0L) {
     authors = unname(data_authors(pkg)$all)
   )
 
-  render_page(pkg, "citation-authors", data, file.path(path, "authors.html"), depth = depth)
+  render_page(pkg, "citation-authors", data, "authors.html")
 }

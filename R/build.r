@@ -28,7 +28,11 @@
 #'
 #' @section YAML config:
 #' There are four top-level YAML settings that affect the entire site:
-#' `url`, `title`, `template`, and `navbar`.
+#' `destination`, `url`, `title`, `template`, and `navbar`.
+#'
+#' `destination` controls where the site will be generated. It defaults to
+#' `docs/` (for GitHub pages), but you can override if desired. Relative
+#' paths will be taken relative to the package root.
 #'
 #' `url` optionally specifies the url where the site will be published.
 #' If you supply this, other pkgdown sites will link to your site when needed,
@@ -161,79 +165,56 @@ build_site <- function(pkg = ".",
                        run_dont_run = FALSE,
                        mathjax = TRUE,
                        preview = interactive(),
-                       seed = 1014,
-                       encoding = "UTF-8"
-) {
-  old <- set_pkgdown_env("true")
-  on.exit(set_pkgdown_env(old))
+                       seed = 1014
+                       ) {
 
-  pkg <- section_init(pkg, depth = depth)
-  path <- rel_path(path, pkg$path)
+  pkg <- section_init(pkg, depth = 0)
 
-  init_site(pkg, path)
+  init_site(pkg)
 
-  build_home(pkg, path = path, encoding = encoding, preview = FALSE)
+  build_home(pkg, preview = FALSE)
   build_reference(pkg,
     lazy = FALSE,
     examples = examples,
     run_dont_run = run_dont_run,
     mathjax = mathjax,
     seed = seed,
-    path = file.path(path, "reference"),
-    depth = 1L,
     preview = FALSE
   )
-  build_articles(pkg, path = file.path(path, "articles"), depth = 1L, encoding = encoding,
-                 preview = FALSE)
-  build_news(pkg, path = file.path(path, "news"), depth = 1L, preview = FALSE)
+  build_articles(pkg, preview = FALSE)
+  build_news(pkg, preview = FALSE)
 
-  section_fin(path, preview = preview)
+  section_fin(pkg, "", preview = preview)
 }
 
 build_site_rstudio <- function() {
   devtools::document()
-  callr::r(function() pkgdown::build_site(), show = TRUE)
-  preview_site()
+  callr::r(function() pkgdown::build_site(preview = TRUE), show = TRUE)
   invisible()
 }
 
 #' @export
 #' @rdname build_site
-init_site <- function(pkg = ".", path = "docs") {
+init_site <- function(pkg = ".") {
   pkg <- as_pkgdown(pkg)
-  path <- rel_path(path, pkg$path)
 
   rule("Initialising site")
-  fs::dir_create(path)
+  dir_create(pkg$dst_path)
 
   assets <- data_assets(pkg)
   if (length(assets) > 0) {
     cat_line("Copying ", length(assets), " assets")
-    fs::file_copy(assets, fs::path(path, fs::path_file(assets)), overwrite = TRUE)
+    file_copy(assets, path(pkg$dst_path, path_file(assets)), overwrite = TRUE)
   }
 
   extras <- data_extras(pkg)
   if (length(extras) > 0) {
     cat_line("Copying ", length(extras), " extras")
-    fs::file_copy(extras, fs::path(path, fs::path_file(extras)), overwrite = TRUE)
+    file_copy(extras, path(pkg$dst_path, path_file(extras)), overwrite = TRUE)
   }
 
-  # Generate site meta data file (available to website viewers)
-  path_meta <- file.path(path, "pkgdown.yml")
-  if (!is.null(pkg$meta$url)) {
-    meta <- list(
-      urls = list(
-        reference = paste0(pkg$meta$url, "/reference"),
-        article = paste0(pkg$meta$url, "/articles")
-      ),
-      articles = as.list(pkg$article_index)
-    )
-    write_yaml(meta, path_meta)
-  } else {
-    unlink(path_meta)
-  }
-
-  build_logo(pkg, path = path)
+  build_site_meta(pkg)
+  build_logo(pkg)
 
   invisible()
 }
@@ -244,18 +225,18 @@ data_assets <- function(pkg = ".") {
   template <- pkg$meta[["template"]]
 
   if (!is.null(template$assets)) {
-    path <- rel_path(template$assets, base = pkg$path)
-    if (!file.exists(path))
+    path <- path_rel(pkg$src_path, template$assets)
+    if (!file_exists(path))
       stop("Can not find asset path '", path, "'", call. = FALSE)
 
   } else if (!is.null(template$package)) {
-    path <- package_path(template$package, "assets")
+    path <- path_package_pkgdown(template$package, "assets")
   } else {
     path <- character()
   }
 
   if (!identical(template$default_assets, FALSE)) {
-    path <- c(path, file.path(inst_path(), "assets"))
+    path <- c(path, path_pkgdown("assets"))
   }
 
   dir(path, full.names = TRUE)
@@ -264,10 +245,31 @@ data_assets <- function(pkg = ".") {
 data_extras <- function(pkg = ".") {
   pkg <- as_pkgdown(pkg)
 
-  path_extras <- fs::path(pkg$path, "pkgdown")
-  if (!fs::dir_exists(path_extras)) {
+  path_extras <- path(pkg$src_path, "pkgdown")
+  if (!dir_exists(path_extras)) {
     return(character())
   }
 
-  fs::dir_ls(path_extras, pattern = "^extra")
+  dir_ls(path_extras, pattern = "^extra")
+}
+
+# Generate site meta data file (available to website viewers)
+build_site_meta <- function(pkg = ".") {
+  meta <- list(
+    pandoc = as.character(rmarkdown::pandoc_version()),
+    pkgdown = as.character(utils::packageVersion("pkgdown")),
+    pkgdown_sha = utils::packageDescription("pkgdown")$GithubSHA1,
+    articles = as.list(pkg$article_index)
+  )
+
+  if (!is.null(pkg$meta$url)) {
+    meta$urls <- list(
+      reference = paste0(pkg$meta$url, "/reference"),
+      article = paste0(pkg$meta$url, "/articles")
+    )
+  }
+
+  path_meta <- path(pkg$dst_path, "pkgdown.yml")
+  write_yaml(meta, path_meta)
+  invisible()
 }

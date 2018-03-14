@@ -32,10 +32,10 @@ render_page <- function(pkg = ".", name, data, path = "", depth = NULL, quiet = 
 
   # render template components
   pieces <- c("head", "navbar", "header", "content", "footer")
-  components <- pieces %>%
-    purrr::map_chr(find_template, name, template_path = template_path(pkg)) %>%
-    purrr::map(render_template, data = data) %>%
-    purrr::set_names(pieces)
+
+  templates <- purrr::map_chr(pieces, find_template, name, template_path = template_path(pkg))
+  components <- purrr::map(templates, render_template, data = data)
+  components <- purrr::set_names(components, pieces)
   components$template <- name
 
   # render complete layout
@@ -61,8 +61,8 @@ data_template <- function(pkg = ".", depth = 0L) {
 
   # Look for extra assets to add
   extra <- list()
-  extra$css <- file_exists(path(pkg$path, "pkgdown", "extra.css"))
-  extra$js <- file_exists(path(pkg$path, "pkgdown", "extra.js"))
+  extra$css <- path_if_exists(pkg$src_path, "pkgdown", "extra.css")
+  extra$js <- path_if_exists(pkg$src_path, "pkgdown", "extra.js")
 
   print_yaml(list(
     year = strftime(Sys.time(), "%Y"),

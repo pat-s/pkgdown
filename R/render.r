@@ -100,7 +100,7 @@ template_path <- function(pkg = ".") {
   template <- pkg$meta[["template"]]
 
   if (!is.null(template$path)) {
-    path <- path_rel(pkg$src_path, template$path)
+    path <- path_abs(template$path, start = pkg$src_path)
 
     if (!file_exists(path))
       stop("Can not find template path '", path, "'", call. = FALSE)
@@ -140,7 +140,7 @@ find_template <- function(type, name, template_path = NULL) {
 
 write_if_different <- function(pkg, contents, path, quiet = FALSE) {
   # Almost all uses are relative to destination, except for rmarkdown templates
-  full_path <- path_rel(pkg$dst_path, path)
+  full_path <- path_abs(path, start = pkg$dst_path)
 
   if (!made_by_pkgdown(full_path)) {
     if (!quiet) {
@@ -164,12 +164,12 @@ same_contents <- function(path, contents) {
   if (!file_exists(path))
     return(FALSE)
 
-  # contents <- paste0(paste0(contents, collapse = "\n"), "\n")
+  new_hash <- digest::digest(contents, serialize = FALSE)
 
-  text_hash <- digest::digest(contents, serialize = FALSE)
-  file_hash <- digest::digest(file = path)
+  cur_contents <- paste0(read_lines(path), collapse = "\n")
+  cur_hash <-  digest::digest(cur_contents, serialize = FALSE)
 
-  identical(text_hash, file_hash)
+  identical(new_hash, cur_hash)
 }
 
 made_by_pkgdown <- function(path) {

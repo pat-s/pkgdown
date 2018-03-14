@@ -23,7 +23,7 @@ as_pkgdown <- function(path = ".") {
   if (is.null(meta$destination)) {
     dst_path <- path(path, "docs")
   } else {
-    dst_path <- path_rel(path, meta$destination)
+    dst_path <- path_abs(meta$destination, start = path)
   }
 
   structure(
@@ -124,7 +124,7 @@ package_rd <- function(path = ".") {
     return(set_names(list(), character()))
   }
 
-  rd <- dir_ls(man_path, pattern = "\\.Rd$", type = "file")
+  rd <- dir_ls(man_path, regexp = "\\.[Rr]d$", type = "file")
   names(rd) <- path_file(rd)
   lapply(rd, rd_file, pkg_path = path)
 }

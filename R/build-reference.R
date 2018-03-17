@@ -93,17 +93,13 @@ build_reference <- function(pkg = ".",
                             ) {
   pkg <- section_init(pkg, depth = 1L)
   rule("Building function reference")
-
-  ref_path <- path(pkg$dst_path, "reference")
-  dir_create(ref_path)
+  build_reference_index(pkg)
 
   # copy everything from man/figures to docs/reference/figures
-  figures_path <- path(pkg$src_path, "man", "figures")
-  if (file_exists(figures_path)) {
-    cat_line("Copying 'man/figures/'")
-    out_path <- path(ref_path, "figures")
-    dir_create(out_path)
-    copy_dir(figures_path, out_path)
+  src_figures <- path(pkg$src_path, "man", "figures")
+  dst_figures <- path(pkg$dst_path, "reference", "figures")
+  if (file_exists(src_figures)) {
+    dir_copy_to(pkg, src_figures, dst_figures)
   }
 
   if (examples) {
@@ -122,9 +118,7 @@ build_reference <- function(pkg = ".",
     set.seed(seed)
   }
 
-  build_reference_index(pkg)
-
-  topics <- pkg$topics %>% purrr::transpose()
+  topics <- purrr::transpose(pkg$topics)
   purrr::map(topics,
     build_reference_topic,
     pkg = pkg,
@@ -141,16 +135,15 @@ build_reference <- function(pkg = ".",
 #' @rdname build_reference
 build_reference_index <- function(pkg = ".") {
   pkg <- as_pkgdown(pkg)
+  dir_create(path(pkg$dst_path, "reference"))
 
   # Copy icons, if needed
   src_icons <- path(pkg$src_path, "icons")
   dst_icons <- path(pkg$dst_path, "reference", "icons")
   if (file_exists(src_icons)) {
-    dir_create(dst_icons)
-    copy_dir(src_icons, dst_icons)
+    dir_copy_to(pkg, src_icons, dst_icons)
   }
 
-  scoped_file_context(depth = 1L)
   render_page(
     pkg, "reference-index",
     data = data_reference_index(pkg),
@@ -173,8 +166,8 @@ build_reference_topic <- function(topic,
   if (lazy && !out_of_date(in_path, out_path))
     return(invisible())
 
-  cat_line("Processing '", topic$file_in, "'")
-  scoped_file_context(rdname = gsub("\\.Rd$", "", topic$file_in), depth = 1L)
+  cat_line("Building ", src_path("man", topic$file_in))
+  scoped_file_context(rdname = path_ext_remove(topic$file_in), depth = 1L)
 
   data <- data_reference_topic(
     topic,
@@ -211,13 +204,15 @@ data_reference_topic <- function(topic,
 
   out$pagetitle <- paste0(out$title, " \u2014 ", out$name)
 
+  # File source
+  out$source <- github_source_links(pkg$github_url, topic$source)
+
   # Multiple top-level converted to string
   out$aliases <- purrr::map_chr(tags$tag_alias %||% list(), flatten_text)
   out$author <- purrr::map_chr(tags$tag_author %||% list(), flatten_text)
   out$keywords <- purrr::map_chr(tags$tag_keyword %||% list(), flatten_text)
 
   # Sections that contain arbitrary text and need cross-referencing
-
   out$description <- as_data(tags$tag_description[[1]])
   out$opengraph <- list(description = strip_html_tags(out$description$contents))
   out$usage <- as_data(tags$tag_usage[[1]])

@@ -152,6 +152,8 @@
 #'
 #' @inheritParams build_articles
 #' @inheritParams build_reference
+#' @param lazy If `TRUE`, will only rebuild articles and reference pages
+#'   if the source is newer than the destination.
 #' @export
 #' @examples
 #' \dontrun{
@@ -161,27 +163,30 @@ build_site <- function(pkg = ".",
                        examples = TRUE,
                        run_dont_run = FALSE,
                        mathjax = TRUE,
+                       lazy = FALSE,
                        preview = interactive(),
                        seed = 1014
                        ) {
 
   pkg <- section_init(pkg, depth = 0)
 
+  rule("Create pkgdown site", right = pkg$dst_path, line = 2)
   init_site(pkg)
 
   build_home(pkg, preview = FALSE)
   build_reference(pkg,
-    lazy = FALSE,
+    lazy = lazy,
     examples = examples,
     run_dont_run = run_dont_run,
     mathjax = mathjax,
     seed = seed,
     preview = FALSE
   )
-  build_articles(pkg, preview = FALSE)
+  build_articles(pkg, lazy = lazy, preview = FALSE)
   build_news(pkg, preview = FALSE)
 
   section_fin(pkg, "", preview = preview)
+  rule("DONE", line = 2)
 }
 
 build_site_rstudio <- function() {
@@ -198,17 +203,8 @@ init_site <- function(pkg = ".") {
   rule("Initialising site")
   dir_create(pkg$dst_path)
 
-  assets <- data_assets(pkg)
-  if (length(assets) > 0) {
-    cat_line("Copying ", length(assets), " assets")
-    file_copy(assets, path(pkg$dst_path, path_file(assets)), overwrite = TRUE)
-  }
-
-  extras <- data_extras(pkg)
-  if (length(extras) > 0) {
-    cat_line("Copying ", length(extras), " extras")
-    file_copy(extras, path(pkg$dst_path, path_file(extras)), overwrite = TRUE)
-  }
+  file_copy_to(pkg, data_assets(pkg))
+  file_copy_to(pkg, data_extras(pkg))
 
   build_site_meta(pkg)
   build_logo(pkg)
@@ -224,7 +220,7 @@ data_assets <- function(pkg = ".") {
   if (!is.null(template$assets)) {
     path <- path_rel(pkg$src_path, template$assets)
     if (!file_exists(path))
-      stop("Can not find asset path '", path, "'", call. = FALSE)
+      stop("Can not find asset path ", src_path(path), call. = FALSE)
 
   } else if (!is.null(template$package)) {
     path <- path_package_pkgdown(template$package, "assets")

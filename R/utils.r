@@ -25,23 +25,10 @@ print.print_yaml <- function(x, ...) {
   cat(yaml::as.yaml(x), "\n", sep = "")
 }
 
-find_first_existing <- function(path, ...) {
-  paths <- path(path, c(...))
-  for (path in paths) {
-    if (file_exists(path))
-      return(path)
-  }
-
-  NULL
-}
-
-path_if_exists <- function(...) {
-  p <- path(...)
-  if (file_exists(p)) {
-    p
-  } else {
-    NULL
-  }
+dir_depth <- function(x) {
+  x %>%
+    strsplit("") %>%
+    purrr::map_int(function(x) sum(x == "/"))
 }
 
 invert_index <- function(x) {
@@ -73,10 +60,19 @@ rstudio_save_all <- function() {
 }
 
 cat_line <- function(...) {
-  cat(..., "\n", sep = "")
+  cat(paste0(..., "\n"), sep = "")
 }
 
-rule <- function(...) cli::cat_rule(..., col = "green")
+dst_path <- function(...) {
+  crayon::blue(encodeString(path(...), quote = "'"))
+}
+src_path <- function(...) {
+  crayon::green(encodeString(path(...), quote = "'"))
+}
+
+rule <- function(left, ...) {
+  cli::cat_rule(left = crayon::bold(left), ...)
+}
 
 list_with_heading <- function(bullets, heading) {
   if (length(bullets) == 0)
@@ -89,3 +85,5 @@ list_with_heading <- function(bullets, heading) {
     "</ul>\n"
   )
 }
+
+is_syntactic <- function(x) x == make.names(x)

@@ -59,7 +59,7 @@ default_navbar <- function(pkg = ".") {
 
     left$intro <- list(
       text = "Get Started",
-      href = paste0("articles/", intro$file_out)
+      href = intro$file_out
     )
   }
 
@@ -71,7 +71,8 @@ default_navbar <- function(pkg = ".") {
   if (nrow(vignettes) > 0) {
     articles <- purrr::map2(
       vignettes$title, vignettes$file_out,
-      ~ list(text = .x, href = paste0("articles/", .y)))
+      ~ list(text = .x, href = .y)
+    )
 
     left$articles <- list(
       text = "Articles",
@@ -79,16 +80,39 @@ default_navbar <- function(pkg = ".") {
     )
   }
 
-  if (has_news(pkg$src_path)) {
+  releases_meta <- pkg$meta$news$releases
+  if (!is.null(releases_meta)) {
     left$news <- list(
       text = "News",
+      menu = c(
+        list(list(text = "Releases")),
+        releases_meta,
+        list(
+          list(text = "------------------"),
+          list(
+            text = "Changelog",
+            href = "news/index.html"
+          )
+        )
+      )
+    )
+  } else if (has_news(pkg$src_path)) {
+    left$news <- list(
+      text = "Changelog",
       href = "news/index.html"
     )
   }
 
-  right <- purrr::compact(list(
-    github_link(pkg$src_path)
-  ))
+  if (!is.null(pkg$github_url)) {
+    right <- list(
+      list(
+        icon = "fa-github fa-lg",
+        href = pkg$github_url
+      )
+    )
+  } else {
+    right <- list()
+  }
 
   print_yaml(list(
     title = pkg$package,
@@ -96,25 +120,4 @@ default_navbar <- function(pkg = ".") {
     left = unname(left),
     right = unname(right)
   ))
-}
-
-github_link <- function(path = ".") {
-  desc <- read_desc(path)
-
-  if (!desc$has_fields("URL"))
-    return()
-
-  gh_links <- desc$get("URL")[[1]] %>%
-    strsplit(",") %>%
-    `[[`(1) %>%
-    trimws()
-  gh_links <- grep("^https?://github.com/", gh_links, value = TRUE)
-
-  if (length(gh_links) == 0)
-    return()
-
-  list(
-    icon = "fa-github fa-lg",
-    href = gh_links[[1]]
-  )
 }

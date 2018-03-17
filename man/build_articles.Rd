@@ -2,9 +2,13 @@
 % Please edit documentation in R/build-articles.R
 \name{build_articles}
 \alias{build_articles}
+\alias{build_article}
 \title{Build articles}
 \usage{
-build_articles(pkg = ".", quiet = TRUE, preview = NA)
+build_articles(pkg = ".", quiet = TRUE, lazy = TRUE, preview = NA)
+
+build_article(name, pkg = ".", data = list(), lazy = FALSE,
+  quiet = TRUE)
 }
 \arguments{
 \item{pkg}{Path to source package. If R working directory is not
@@ -14,14 +18,22 @@ path to the source directory (not a relative path).}
 \item{quiet}{Set to \code{FALSE} to display output of knitr and
 pandoc. This is useful when debugging.}
 
+\item{lazy}{If \code{TRUE}, will only re-build article if input file has been
+modified more recently than the output file.}
+
 \item{preview}{If \code{TRUE}, or \code{is.na(preview) && interactive()}, will preview
 freshly generated section in browser.}
+
+\item{name}{Name of article to render. This should be either a path
+relative to \code{vignettes/} without extension, or \code{index} or \code{README}.}
+
+\item{data}{Additional data to pass on to template.}
 }
 \description{
-Each Rmarkdown vignette in \code{vignettes/} and its subdirectories is
-rendered. Vignettes are rendered using a special document format that
-reconciles \code{\link[rmarkdown:html_document]{rmarkdown::html_document()}} with your pkgdown
-template.
+Each R Markdown vignette in \code{vignettes/} and its subdirectories is
+rendered and saved to \code{articles/}. Vignettes are rendered using a
+special document format that reconciles \code{\link[rmarkdown:html_document]{rmarkdown::html_document()}} with
+your pkgdown template.
 }
 \section{YAML config}{
 
@@ -53,6 +65,32 @@ naming schemes you can use an aribrary regular expression with
 
 pkgdown will check that all vignettes are included in the index
 this page, and will generate a warning if you have missed any.
+}
+
+\section{YAML header}{
+
+By default, pkgdown builds all articles with \code{\link[rmarkdown:html_document]{rmarkdown::html_document()}}
+using setting the \code{template} parameter to a custom built template that
+matches the site template. You can override this with a \code{pkgdown} field
+in your yaml metadata:
+
+\preformatted{
+pkgdown:
+  as_is: true
+}
+
+This will tell pkgdown to use the \code{output_format} that you have specified.
+This format must accept \code{template}, \code{theme}, and \code{self_contained} in
+order to work with pkgdown.
+
+If the output format produces a PDF, you'll also need to specify the
+\code{extension} field:
+
+\preformatted{
+pkgdown:
+  as_is: true
+  extension: pdf
+}
 }
 
 \section{Supressing vignettes}{

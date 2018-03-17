@@ -1,21 +1,26 @@
-build_home_md <- function(pkg, path, depth = 0) {
+build_home_md <- function(pkg) {
 
   mds <- dir_ls(pkg$src_path, glob = "*.md")
-  excl <- path_file(mds) %in% c("README.md", "LICENSE.md")
-  mds <- mds[!excl]
 
-  if (length(mds) == 0) {
-    return()
+  # Also looks in .github, if it exists
+  github_path <- path(pkg$src_path, ".github")
+  if (dir_exists(github_path)) {
+    mds <- c(mds, dir_ls(github_path, glob = "*.md"))
   }
 
+  # Remove files handled elsewhere
+  handled <- c("README.md", "LICENSE.md", "NEWS.md", "cran-comments.md")
+  mds <- mds[!path_file(mds) %in% handled]
+
   lapply(mds, render_md, pkg = pkg)
+  invisible()
 }
 
 render_md <- function(pkg, filename) {
-  body <- markdown(path = filename)
+  body <- markdown(path = filename, strip_header = TRUE)
 
   render_page(pkg, "title-body",
-    data = list(pagetitle = filename, body = body),
+    data = list(pagetitle = attr(body, "title"), body = body),
     path = path_ext_set(basename(filename), "html")
   )
 }

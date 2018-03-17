@@ -32,18 +32,37 @@
 #'   - Lots of bug fixes (@hadley, #100)
 #' }
 #'
+#' If the package is available on CRAN, release dates will be added for listed versions.
+#'
 #' @section YAML config:
 #'
-#' There are currently no configuration options.
+#' To automatically link to release announcements, include a `releases`
+#' section.
+#'
+#' \preformatted{
+#' news:
+#'  releases:
+#'  - text: "usethis 1.3.0"
+#'    href: https://www.tidyverse.org/articles/2018/02/usethis-1-3-0/
+#'  - text: "usethis 1.0.0 (and 1.1.0)"
+#'    href: https://www.tidyverse.org/articles/2017/11/usethis-1.0.0/
+#' }
+#'
+#' Control whether news is present on one page or multiple pages with the
+#' `one_page` field. The default is `true`.
+#'
+#' \preformatted{
+#' news:
+#' - one_page: false
+#' }
 #'
 #' @inheritParams build_articles
-#' @param one_page If `TRUE`, writes all news to a single file.
-#'   If `FALSE`, writes one file per major version.
 #' @export
 build_news <- function(pkg = ".",
-                       one_page = TRUE,
                        preview = NA) {
   pkg <- section_init(pkg, depth = 1L)
+
+  one_page <- purrr::pluck(pkg, "meta", "news", "one_page", .default = TRUE)
 
   if (!has_news(pkg$src_path))
     return()
@@ -67,9 +86,9 @@ build_news_single <- function(pkg) {
     pkg,
     "news",
     list(
-      version = "All releases",
-      contents = news %>% purrr::transpose(),
-      pagetitle = "All news"
+      contents = purrr::transpose(news),
+      pagetitle = "Changelog",
+      source = github_source_links(pkg$github_url, "NEWS.md")
     ),
     path("news", "index.html")
   )
@@ -138,21 +157,25 @@ data_news <- function(pkg = ".") {
   sections <- sections[is_version]
   anchors <- anchors[is_version]
 
-  major <- pieces %>% purrr::map_chr(4)
+  major <- purrr::map_chr(pieces, 4)
+  version <- purrr::map_chr(pieces, 3)
 
+  timeline <- pkg_timeline(pkg$package)
   html <- sections %>%
     purrr::walk(tweak_code) %>%
+    purrr::walk2(version, tweak_news_heading, timeline = timeline) %>%
     purrr::map_chr(as.character) %>%
     purrr::map_chr(add_github_links, pkg = pkg)
 
   news <- tibble::tibble(
-    version = pieces %>% purrr::map_chr(3),
+    version = version,
     is_dev = is_dev(version),
     major = major,
     major_dev = ifelse(is_dev, "unreleased", major),
     anchor = anchors,
     html = html
   )
+
   news[is_version, , drop = FALSE]
 }
 
@@ -169,18 +192,49 @@ is_dev <- function(version) {
   dev_v > 0
 }
 
-add_github_links <- function(x, pkg) {
-  user_link <- paste0("<a href='http://github.com/\\1'>@\\1</a>")
-  x <- gsub("@(\\w+)", user_link, x)
+pkg_timeline <- function(package) {
+  url <- paste0("http://crandb.r-pkg.org/", package, "/all")
 
-  gh_link <- github_link(pkg$src_path)
-  if (is.null(gh_link)) {
-    return(x)
+  resp <- httr::GET(url)
+  if (httr::http_error(resp)) {
+    return(NULL)
   }
 
-  gh_link_href <- github_link(pkg$src_path)$href
-  issue_link <- paste0("<a href='", gh_link_href, "/issues/\\1'>#\\1</a>")
-  x <- gsub("#(\\d+)", issue_link, x)
+  content <- httr::content(resp)
+  timeline <- content$timeline
 
-  x
+  data.frame(
+    version = names(timeline),
+    date = as.Date(unlist(timeline)),
+    stringsAsFactors = FALSE
+  )
+}
+
+rel_date_html <- function(date) {
+  if (is.na(date))
+    return("<small> Unreleased</small>")
+
+  paste0("<small> ", date, "</small>")
+}
+
+tweak_news_heading <- function(x, versions, timeline) {
+  x %>%
+    xml2::xml_find_all(".//h1") %>%
+    xml2::xml_set_attr("class", "page-header")
+
+  if (is.null(timeline))
+    return(x)
+
+  date <- timeline$date[match(versions, timeline$version)]
+  date_str <- ifelse(is.na(date), "Unreleased", as.character(date))
+
+  date_nodes <- paste(" <small>", date_str, "</small>", collapse = "") %>%
+    xml2::read_html() %>%
+    xml2::xml_find_all(".//small")
+
+  x %>%
+    xml2::xml_find_all(".//h1") %>%
+    xml2::xml_add_child(date_nodes, .where = 1)
+
+  invisible()
 }

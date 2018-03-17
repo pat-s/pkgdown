@@ -1,9 +1,9 @@
-markdown <- function(path = NULL, ...) {
+markdown <- function(path = NULL, ..., strip_header = FALSE) {
   tmp <- tempfile(fileext = ".html")
   on.exit(file_delete(tmp), add = TRUE)
 
   if (rmarkdown::pandoc_available("2.0")) {
-    from <- "markdown_github-hard_line_breaks+smart"
+    from <- "markdown_github-hard_line_breaks+smart+auto_identifiers"
   } else {
     from <- "markdown_github-hard_line_breaks"
   }
@@ -25,13 +25,18 @@ markdown <- function(path = NULL, ...) {
   xml <- xml2::read_html(tmp, encoding = "UTF-8")
 
   if (!inherits(xml, "xml_node")) {
-    stop(
-      "'", path, "' must be a nonempty file or be deleted to build homepage.",
-      call. = FALSE
-    )
+    stop(src_path(path), " must be non-empty", call. = FALSE)
+  }
+
+  # Capture heading, and optional remove
+  h1 <- xml2::xml_find_first(xml, ".//h1")
+  title <- xml2::xml_text(h1)
+  if (strip_header) {
+    xml2::xml_remove(h1)
   }
 
   tweak_code(xml)
+  tweak_md_links(xml)
   tweak_anchors(xml, only_contents = FALSE)
 
   # Extract body of html - as.character renders as xml which adds
@@ -43,7 +48,11 @@ markdown <- function(path = NULL, ...) {
   lines <- read_lines(tmp)
   lines <- sub("<body>", "", lines, fixed = TRUE)
   lines <- sub("</body>", "", lines, fixed = TRUE)
-  paste(lines, collapse = "\n")
+
+  structure(
+    paste(lines, collapse = "\n"),
+    title = title
+  )
 }
 
 markdown_text <- function(text, ...) {

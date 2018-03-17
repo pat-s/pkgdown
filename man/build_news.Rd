@@ -4,15 +4,12 @@
 \alias{build_news}
 \title{Build news section}
 \usage{
-build_news(pkg = ".", one_page = TRUE, preview = NA)
+build_news(pkg = ".", preview = NA)
 }
 \arguments{
 \item{pkg}{Path to source package. If R working directory is not
 set to the source directory, then pkg must be a fully qualified
 path to the source directory (not a relative path).}
-
-\item{one_page}{If \code{TRUE}, writes all news to a single file.
-If \code{FALSE}, writes one file per major version.}
 
 \item{preview}{If \code{TRUE}, or \code{is.na(preview) && interactive()}, will preview
 freshly generated section in browser.}
@@ -50,10 +47,30 @@ github if a \code{URL} entry linking to github.com is provided in the package
 
 - Lots of bug fixes (@hadley, #100)
 }
+
+If the package is available on CRAN, release dates will be added for listed versions.
 }
 \section{YAML config}{
 
 
-There are currently no configuration options.
+To automatically link to release announcements, include a \code{releases}
+section.
+
+\preformatted{
+news:
+ releases:
+ - text: "usethis 1.3.0"
+   href: https://www.tidyverse.org/articles/2018/02/usethis-1-3-0/
+ - text: "usethis 1.0.0 (and 1.1.0)"
+   href: https://www.tidyverse.org/articles/2017/11/usethis-1.0.0/
+}
+
+Control whether news is present on one page or multiple pages with the
+\code{one_page} field. The default is \code{true}.
+
+\preformatted{
+news:
+- one_page: false
+}
 }
 

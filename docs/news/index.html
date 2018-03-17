@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>All news • pkgdown</title>
+<title>Changelog • pkgdown</title>
 
 <!-- jquery -->
 <script src="https://code.jquery.com/jquery-3.1.0.min.js" integrity="sha384-nrOSfDHtoPMzJHjVTdCopGqIqeYETSXhZDFyniQ8ZHcVy08QesyHcnOUpMpqnmWq" crossorigin="anonymous"></script>
@@ -25,7 +25,7 @@
 <link href="../pkgdown.css" rel="stylesheet">
 <script src="../jquery.sticky-kit.min.js"></script>
 <script src="../pkgdown.js"></script>
-<meta property="og:title" content="All news" />
+<meta property="og:title" content="Changelog" />
 <!-- mathjax -->
 <script src='https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML'></script>
 
@@ -72,15 +72,24 @@
   </a>
   <ul class="dropdown-menu" role="menu">
     <li>
-      <a href="../articles/test/details.html">Details tag</a>
+      <a href="../articles/test/details.html">Test: Details tag</a>
     </li>
     <li>
-      <a href="../articles/test/highlight.html">Highlighting tests</a>
+      <a href="../articles/test/external.html">Test: External file tests</a>
+    </li>
+    <li>
+      <a href="../articles/test/highlight.html">Test: Highlighting</a>
+    </li>
+    <li>
+      <a href="../articles/test/output.html">Test: Custom output</a>
+    </li>
+    <li>
+      <a href="../articles/test/pdf.pdf">Test: PDF (PDF)</a>
     </li>
   </ul>
 </li>
 <li>
-  <a href="../news/index.html">News</a>
+  <a href="../news/index.html">Changelog</a>
 </li>
       </ul>
       
@@ -103,14 +112,17 @@
 
   <div class="col-md-9">
     <div class="page-header">
-      <h1>Change log <small>All releases</small></h1>
+      <h1>Change log <small></small></h1>
+      <small>Source: <a href='https:/github.com/hadley/pkgdown/blob/master/NEWS.md'><code>NEWS.md</code></a></small>
     </div>
 
     <div class="contents">
-    <div class="section level1">
-<h1>pkgdown 0.1.0.9000</h1>
+    <div id="pkgdown-0-1-0-9000" class="section level1">
+<h1 class="page-header">
+<a href="#pkgdown-0-1-0-9000" class="anchor"></a>pkgdown 0.1.0.9000</h1>
 <ul>
-<li>Major refactoring of path handling. <code>build_</code> functions no longer take <code>path</code> or <code>depth</code> arguments. Instead, set the <code>destination</code> directory at the top level of <code>pkgdown.yml</code>.</li>
+<li><p>Major refactoring of path handling. <code>build_</code> functions no longer take <code>path</code> or <code>depth</code> arguments. Instead, set the <code>destination</code> directory at the top level of <code>pkgdown.yml</code>.</p></li>
+<li><p>Similarly, <code><a href="../reference/build_news.html">build_news()</a></code> no longer takes a <code>one_page</code> argument; this should now be specified in the <code>_pkgdown.yml</code> instead. See the documentation for an example.</p></li>
 </ul>
 </div>
     </div>
@@ -120,7 +132,7 @@
     <div id="tocnav">
       <h2>Contents</h2>
       <ul class="nav nav-pills nav-stacked">
-        <li><a href="#NA">0.1.0.9000</a></li>
+        <li><a href="#pkgdown-0-1-0-9000">0.1.0.9000</a></li>
       </ul>
     </div>
   </div>

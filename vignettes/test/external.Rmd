@@ -1,8 +1,8 @@
 ---
-title: "Test: Details tag"
+title: "Test: External file tests"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{details tag}
+  %\VignetteIndexEntry{Vignette Title}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -11,15 +11,10 @@ vignette: >
 knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
 ```
 
-<details>
-  This should only be shown when required
-</details>
+This document refers to an external file to make sure that works.
 
-<details>
-<summary>Some R code</summary>
-  
 ```{r}
-1 + 2
+x <- readLines("test.txt")
+x
 ```
-</details>
-  
+

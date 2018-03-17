@@ -85,15 +85,24 @@ Note if names of generated files were changed, you will need to use clean_site f
   </a>
   <ul class="dropdown-menu" role="menu">
     <li>
-      <a href="../articles/test/details.html">Details tag</a>
+      <a href="../articles/test/details.html">Test: Details tag</a>
     </li>
     <li>
-      <a href="../articles/test/highlight.html">Highlighting tests</a>
+      <a href="../articles/test/external.html">Test: External file tests</a>
+    </li>
+    <li>
+      <a href="../articles/test/highlight.html">Test: Highlighting</a>
+    </li>
+    <li>
+      <a href="../articles/test/output.html">Test: Custom output</a>
+    </li>
+    <li>
+      <a href="../articles/test/pdf.pdf">Test: PDF (PDF)</a>
     </li>
   </ul>
 </li>
 <li>
-  <a href="../news/index.html">News</a>
+  <a href="../news/index.html">Changelog</a>
 </li>
       </ul>
       
@@ -116,6 +125,7 @@ Note if names of generated files were changed, you will need to use clean_site f
   <div class="col-md-9 contents">
     <div class="page-header">
     <h1>Build pkgdown website</h1>
+    <small>Source: <a href='https:/github.com/hadley/pkgdown/blob/master/R/build.r'><code>R/build.r</code></a></small>
     </div>
 
     
@@ -133,7 +143,7 @@ that aspect of the site.</p>
     
 
     <pre class="usage"><span class='fu'>build_site</span>(<span class='kw'>pkg</span> <span class='kw'>=</span> <span class='st'>"."</span>, <span class='kw'>examples</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>, <span class='kw'>run_dont_run</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
-  <span class='kw'>mathjax</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>, <span class='kw'>preview</span> <span class='kw'>=</span> <span class='fu'>interactive</span>(), <span class='kw'>seed</span> <span class='kw'>=</span> <span class='fl'>1014</span>)
+  <span class='kw'>mathjax</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>, <span class='kw'>lazy</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='kw'>preview</span> <span class='kw'>=</span> <span class='fu'>interactive</span>(), <span class='kw'>seed</span> <span class='kw'>=</span> <span class='fl'>1014</span>)
 
 <span class='fu'>init_site</span>(<span class='kw'>pkg</span> <span class='kw'>=</span> <span class='st'>"."</span>)</pre>
     
@@ -157,6 +167,11 @@ path to the source directory (not a relative path).</p></td>
     <tr>
       <th>mathjax</th>
       <td><p>Use mathjax to render math symbols?</p></td>
+    </tr>
+    <tr>
+      <th>lazy</th>
+      <td><p>If <code>TRUE</code>, will only rebuild articles and reference pages
+if the source is newer than the destination.</p></td>
     </tr>
     <tr>
       <th>preview</th>

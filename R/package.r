@@ -31,6 +31,7 @@ as_pkgdown <- function(path = ".") {
       package = package,
       src_path = path_abs(path),
       dst_path = path_abs(dst_path),
+      github_url = pkg_github_url(desc),
       desc = desc,
       meta = meta,
       topics = topics,
@@ -67,7 +68,7 @@ read_desc <- function(path = ".") {
 # Metadata ----------------------------------------------------------------
 
 read_meta <- function(path) {
-  path <- find_first_existing(
+  path <- path_first_existing(
     path,
     c("_pkgdown.yml", "pkgdown/_pkgdown.yml", "_pkgdown.yaml")
   )
@@ -83,11 +84,11 @@ read_meta <- function(path) {
 
 # Topics ------------------------------------------------------------------
 
-package_topics <- function(path = ".", package = "") {
+package_topics <- function(path = ".", package = "pkgdown") {
   rd <- package_rd(path)
 
   # In case there are links in titles
-  scoped_package_context(package)
+  scoped_package_context(package, src_path = path)
   scoped_file_context()
 
   aliases <- purrr::map(rd, extract_tag, "tag_alias")
@@ -95,23 +96,22 @@ package_topics <- function(path = ".", package = "") {
   titles <- purrr::map_chr(rd, extract_title)
   concepts <- purrr::map(rd, extract_tag, "tag_concept")
   internal <- purrr::map_lgl(rd, is_internal)
+  source <- purrr::map(rd, extract_source)
 
   file_in <- names(rd)
   file_out <- gsub("\\.Rd$", ".html", file_in)
 
-  usage <- purrr::map(rd, topic_usage)
-  funs <- purrr::map(usage, usage_funs)
-
+  funs <- purrr::map(rd, topic_funs)
 
   tibble::tibble(
     name = names,
     file_in = file_in,
     file_out = file_out,
     alias = aliases,
-    usage = usage,
     funs = funs,
     title = titles,
     rd = rd,
+    source = source,
     concepts = concepts,
     internal = internal
   )
@@ -142,6 +142,22 @@ extract_title <- function(x) {
     trimws()
 }
 
+extract_source <- function(x) {
+  nl <- purrr::map_lgl(x, inherits, "TEXT") & x == "\n"
+  comment <- purrr::map_lgl(x, inherits, "COMMENT")
+
+  first_comment <- cumsum(!(nl | comment)) == 0
+  lines <- as.character(x[first_comment])
+  text <- paste0(lines, collapse = "")
+
+  if (!grepl("roxygen2", text)) {
+    return(character())
+  }
+
+  m <- gregexpr("R/[^ ]+\\.[rR]", text)
+  regmatches(text, m)[[1]]
+}
+
 is_internal <- function(x) {
   any(extract_tag(x, "tag_keyword") %in% "internal")
 }
@@ -150,31 +166,25 @@ is_internal <- function(x) {
 # Vignettes ---------------------------------------------------------------
 
 package_vignettes <- function(path = ".") {
-  vig_path <- dir(
-    path(path, "vignettes"),
-    pattern = "\\.[rR]md$",
-    recursive = TRUE
-  )
-  vig_path <- vig_path[!grepl("^_", basename(vig_path))]
+  base <- path(path, "vignettes")
 
-  title <- path(path, "vignettes", vig_path) %>%
-    purrr::map(rmarkdown::yaml_front_matter) %>%
-    purrr::map_chr("title", .null = "UNKNOWN TITLE")
+  if (!dir_exists(base)) {
+    vig_path <- character()
+  } else {
+    vig_path <- dir_ls(base, regexp = "\\.[rR]md$", recursive = TRUE)
+  }
+  vig_path <- path_rel(vig_path, base)
+  vig_path <- vig_path[!grepl("^_", path_file(vig_path))]
+
+  yaml <- purrr::map(path(base, vig_path), rmarkdown::yaml_front_matter)
+  title <- purrr::map_chr(yaml, "title", .default = "UNKNOWN TITLE")
+  ext <- purrr::map_chr(yaml, c("pkgdown", "extension"), .default = "html")
+  title[ext == "pdf"] <- paste0(title[ext == "pdf"], " (PDF)")
 
   tibble::tibble(
-    file_in = vig_path,
-    file_out = gsub("\\.[rR]md$", "\\.html", vig_path),
-    name = tools::file_path_sans_ext(basename(vig_path)),
-    path = dirname(vig_path),
-    vig_depth = dir_depth(vig_path),
+    name = path_ext_remove(vig_path),
+    file_in = path("vignettes", vig_path),
+    file_out = path("articles", path_ext_set(vig_path, ext)),
     title = title
   )
 }
-
-dir_depth <- function(x) {
-  x %>%
-    strsplit("") %>%
-    purrr::map_int(function(x) sum(x == "/"))
-}
-
-

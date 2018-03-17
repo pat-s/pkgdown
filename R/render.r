@@ -61,8 +61,8 @@ data_template <- function(pkg = ".", depth = 0L) {
 
   # Look for extra assets to add
   extra <- list()
-  extra$css <- path_if_exists(pkg$src_path, "pkgdown", "extra.css")
-  extra$js <- path_if_exists(pkg$src_path, "pkgdown", "extra.js")
+  extra$css <- path_first_existing(pkg$src_path, "pkgdown", "extra.css")
+  extra$js <- path_first_existing(pkg$src_path, "pkgdown", "extra.js")
 
   print_yaml(list(
     year = strftime(Sys.time(), "%Y"),
@@ -103,7 +103,7 @@ template_path <- function(pkg = ".") {
     path <- path_abs(template$path, start = pkg$src_path)
 
     if (!file_exists(path))
-      stop("Can not find template path '", path, "'", call. = FALSE)
+      stop("Can not find template path ", src_path(path), call. = FALSE)
 
     path
   } else if (!is.null(template$package)) {
@@ -154,7 +154,7 @@ write_if_different <- function(pkg, contents, path, quiet = FALSE) {
   }
 
   if (!quiet) {
-    cat_line("Writing '", path, "'")
+    cat_line("Writing  ", dst_path(path))
   }
   write_lines(contents, path = full_path)
   TRUE

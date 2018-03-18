@@ -3,7 +3,7 @@
 #' @description
 #' `build_site()` is a convenient wrapper around six functions:
 #'
-#' * `init_site()`
+#' * [init_site()]
 #' * [build_articles()]
 #' * [build_home()]
 #' * [build_reference()]
@@ -15,17 +15,7 @@
 #'
 #' Note if names of generated files were changed, you will need to use [clean_site] first to clean up orphan files.
 #'
-#' @section Custom CSS/JS:
-#' If you want to do minor customisation of your pkgdown site, the easiest
-#' way is to add `pkgdown/extra.css` and `pkgdown/extra.js`. These
-#' will be automatically copied to `docs/` and inserted into the
-#' `<HEAD>` after the default pkgdown CSS and JSS.
-#'
-#' @section Favicon:
-#' If you include you package logo in the standard location of
-#' `man/figures/logo.png`, a favicon will be automatically created for
-#' you.
-#'
+
 #' @section YAML config:
 #' There are four top-level YAML settings that affect the entire site:
 #' `destination`, `url`, `title`, `template`, and `navbar`.
@@ -158,111 +148,48 @@
 #' @examples
 #' \dontrun{
 #' build_site()
+#'
+#' build_site(override = list(destination = tempdir()))
 #' }
 build_site <- function(pkg = ".",
                        examples = TRUE,
                        run_dont_run = FALSE,
+                       seed = 1014,
                        mathjax = TRUE,
                        lazy = FALSE,
-                       preview = interactive(),
-                       seed = 1014
+                       override = list(),
+                       preview = interactive()
                        ) {
 
-  pkg <- section_init(pkg, depth = 0)
+  pkg <- section_init(pkg, depth = 0, override = override)
 
   rule("Create pkgdown site", right = pkg$dst_path, line = 2)
   init_site(pkg)
 
-  build_home(pkg, preview = FALSE)
+  build_home(pkg, override = override, preview = FALSE)
   build_reference(pkg,
     lazy = lazy,
     examples = examples,
     run_dont_run = run_dont_run,
     mathjax = mathjax,
     seed = seed,
+    override = override,
     preview = FALSE
   )
-  build_articles(pkg, lazy = lazy, preview = FALSE)
-  build_news(pkg, preview = FALSE)
+  build_articles(pkg, lazy = lazy, override = override, preview = FALSE)
+  build_news(pkg, override = override, preview = FALSE)
 
-  section_fin(pkg, "", preview = preview)
+  preview_site(pkg, preview = preview)
   rule("DONE", line = 2)
 }
 
-build_site_rstudio <- function() {
+build_site_rstudio <- function(pkg = ".") {
   devtools::document()
-  callr::r(function() pkgdown::build_site(preview = TRUE), show = TRUE)
-  invisible()
-}
-
-#' @export
-#' @rdname build_site
-init_site <- function(pkg = ".") {
-  pkg <- as_pkgdown(pkg)
-
-  rule("Initialising site")
-  dir_create(pkg$dst_path)
-
-  file_copy_to(pkg, data_assets(pkg))
-  file_copy_to(pkg, data_extras(pkg))
-
-  build_site_meta(pkg)
-  build_logo(pkg)
-
-  invisible()
-}
-
-data_assets <- function(pkg = ".") {
-  pkg <- as_pkgdown(pkg)
-
-  template <- pkg$meta[["template"]]
-
-  if (!is.null(template$assets)) {
-    path <- path_rel(pkg$src_path, template$assets)
-    if (!file_exists(path))
-      stop("Can not find asset path ", src_path(path), call. = FALSE)
-
-  } else if (!is.null(template$package)) {
-    path <- path_package_pkgdown(template$package, "assets")
-  } else {
-    path <- character()
-  }
-
-  if (!identical(template$default_assets, FALSE)) {
-    path <- c(path, path_pkgdown("assets"))
-  }
-
-  dir(path, full.names = TRUE)
-}
-
-data_extras <- function(pkg = ".") {
-  pkg <- as_pkgdown(pkg)
-
-  path_extras <- path(pkg$src_path, "pkgdown")
-  if (!dir_exists(path_extras)) {
-    return(character())
-  }
-
-  dir_ls(path_extras, regexp = "^extra")
-}
-
-# Generate site meta data file (available to website viewers)
-build_site_meta <- function(pkg = ".") {
-  meta <- list(
-    pandoc = as.character(rmarkdown::pandoc_version()),
-    pkgdown = as.character(utils::packageVersion("pkgdown")),
-    pkgdown_sha = utils::packageDescription("pkgdown")$GithubSHA1,
-    articles = as.list(pkg$article_index)
+  callr::r(
+    function(...) pkgdown::build_site(...),
+    args = list(pkg = pkg),
+    show = TRUE
   )
-
-  if (!is.null(pkg$meta$url)) {
-    meta$urls <- list(
-      reference = paste0(pkg$meta$url, "/reference"),
-      article = paste0(pkg$meta$url, "/articles")
-    )
-  }
-
-  path_meta <- path(pkg$dst_path, "pkgdown.yml")
-  write_yaml(meta, path_meta)
+  preview_site(pkg)
   invisible()
 }

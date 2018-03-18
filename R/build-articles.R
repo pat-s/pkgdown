@@ -67,9 +67,7 @@
 #' directory is present: if you do not want this, you will need to
 #' customise the navbar. See [build_site()] details.
 #'
-#' @param pkg Path to source package. If R working directory is not
-#'     set to the source directory, then pkg must be a fully qualified
-#'     path to the source directory (not a relative path).
+#' @inheritParams as_pkgdown
 #' @param quiet Set to `FALSE` to display output of knitr and
 #'   pandoc. This is useful when debugging.
 #' @param lazy If `TRUE`, will only re-build article if input file has been
@@ -80,7 +78,9 @@
 build_articles <- function(pkg = ".",
                            quiet = TRUE,
                            lazy = TRUE,
+                           override = list(),
                            preview = NA) {
+
   pkg <- section_init(pkg, depth = 4L)
 
   if (nrow(pkg$vignettes) == 0L) {
@@ -97,7 +97,7 @@ build_articles <- function(pkg = ".",
     lazy = lazy
   )
 
-  section_fin(pkg, "articles", preview = preview)
+  preview_site(pkg, "articles", preview = preview)
 }
 
 #' @export

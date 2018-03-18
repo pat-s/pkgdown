@@ -54,6 +54,8 @@ short_name <- function(name, type, signature) {
 usage_type <- function(x) {
   if (is_symbol(x)) {
     list(type = "data", name = as.character(x))
+  } else if (is_call(x, "data")) {
+    list(type = "data", name = as.character(x[[2]]))
   } else if (is.call(x)) {
     if (identical(x[[1]], quote(`<-`))) {
       replacement <- TRUE
@@ -136,10 +138,13 @@ usage_code.NULL <- function(x) character()
 #' @export
 usage_code.tag <- function(x) {
   if (!identical(class(x), "tag")) {
-    stop("Undefined tag ", class(x), class. = FALSE)
+    stop("Undefined tag ", class(x)[[1]], call. = FALSE)
   }
   paste0(purrr::flatten_chr(purrr::map(x, usage_code)), collapse = "")
 }
+
+#' @export
+usage_code.tag_dots <- function(x) "..."
 
 #' @export
 usage_code.TEXT <-    function(x) as.character(x)

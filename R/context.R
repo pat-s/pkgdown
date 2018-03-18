@@ -1,5 +1,5 @@
-section_init <- function(pkg, depth, scope = parent.frame()) {
-  pkg <- as_pkgdown(pkg)
+section_init <- function(pkg, depth, override = list(), scope = parent.frame()) {
+  pkg <- as_pkgdown(pkg, override = override)
 
   rstudio_save_all()
   scoped_in_pkgdown(scope = scope)
@@ -16,7 +16,9 @@ section_init <- function(pkg, depth, scope = parent.frame()) {
   pkg
 }
 
-section_fin <- function(pkg, path, preview = NA) {
+preview_site <- function(pkg, path = ".", preview = NA) {
+  pkg <- as_pkgdown(pkg)
+
   if (is.na(preview)) {
     preview <- interactive()
   }

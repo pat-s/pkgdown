@@ -2,38 +2,37 @@
 % Please edit documentation in R/build.r
 \name{build_site}
 \alias{build_site}
-\alias{init_site}
 \title{Build pkgdown website}
 \usage{
 build_site(pkg = ".", examples = TRUE, run_dont_run = FALSE,
-  mathjax = TRUE, lazy = FALSE, preview = interactive(), seed = 1014)
-
-init_site(pkg = ".")
+  seed = 1014, mathjax = TRUE, lazy = FALSE, override = list(),
+  preview = interactive())
 }
 \arguments{
-\item{pkg}{Path to source package. If R working directory is not
-set to the source directory, then pkg must be a fully qualified
-path to the source directory (not a relative path).}
+\item{pkg}{Path to package.}
 
 \item{examples}{Run examples?}
 
 \item{run_dont_run}{Run examples that are surrounded in \\dontrun?}
+
+\item{seed}{Seed used to initialize so that random examples are
+reproducible.}
 
 \item{mathjax}{Use mathjax to render math symbols?}
 
 \item{lazy}{If \code{TRUE}, will only rebuild articles and reference pages
 if the source is newer than the destination.}
 
+\item{override}{An optional named list used to temporarily override
+values in \code{_pkgdown.yml}}
+
 \item{preview}{If \code{TRUE}, or \code{is.na(preview) && interactive()}, will preview
 freshly generated section in browser.}
-
-\item{seed}{Seed used to initialize so that random examples are
-reproducible.}
 }
 \description{
 \code{build_site()} is a convenient wrapper around five functions:
 \itemize{
-\item \code{init_site()}
+\item \code{\link[=init_site]{init_site()}}
 \item \code{\link[=build_articles]{build_articles()}}
 \item \code{\link[=build_home]{build_home()}}
 \item \code{\link[=build_reference]{build_reference()}}
@@ -45,21 +44,6 @@ that aspect of the site.
 
 Note if names of generated files were changed, you will need to use \link{clean_site} first to clean up orphan files.
 }
-\section{Custom CSS/JS}{
-
-If you want to do minor customisation of your pkgdown site, the easiest
-way is to add \code{pkgdown/extra.css} and \code{pkgdown/extra.js}. These
-will be automatically copied to \code{docs/} and inserted into the
-\code{<HEAD>} after the default pkgdown CSS and JSS.
-}
-
-\section{Favicon}{
-
-If you include you package logo in the standard location of
-\code{man/figures/logo.png}, a favicon will be automatically created for
-you.
-}
-
 \section{YAML config}{
 
 There are four top-level YAML settings that affect the entire site:
@@ -193,5 +177,7 @@ for pkgdown templates to ensure that you use the correct components.
 \examples{
 \dontrun{
 build_site()
+
+build_site(override = list(destination = tempdir()))
 }
 }

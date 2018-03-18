@@ -91,6 +91,9 @@ Note if names of generated files were changed, you will need to use clean_site f
       <a href="../articles/test/external.html">Test: External file tests</a>
     </li>
     <li>
+      <a href="../articles/test/figures.html">Test: Figures</a>
+    </li>
+    <li>
       <a href="../articles/test/highlight.html">Test: Highlighting</a>
     </li>
     <li>
@@ -130,7 +133,7 @@ Note if names of generated files were changed, you will need to use clean_site f
 
     
     <p><code>build_site()</code> is a convenient wrapper around five functions:</p><ul>
-<li><p><code>init_site()</code></p></li>
+<li><p><code><a href='init_site.html'>init_site()</a></code></p></li>
 <li><p><code><a href='build_articles.html'>build_articles()</a></code></p></li>
 <li><p><code><a href='build_home.html'>build_home()</a></code></p></li>
 <li><p><code><a href='build_reference.html'>build_reference()</a></code></p></li>
@@ -143,18 +146,15 @@ that aspect of the site.</p>
     
 
     <pre class="usage"><span class='fu'>build_site</span>(<span class='kw'>pkg</span> <span class='kw'>=</span> <span class='st'>"."</span>, <span class='kw'>examples</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>, <span class='kw'>run_dont_run</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
-  <span class='kw'>mathjax</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>, <span class='kw'>lazy</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='kw'>preview</span> <span class='kw'>=</span> <span class='fu'>interactive</span>(), <span class='kw'>seed</span> <span class='kw'>=</span> <span class='fl'>1014</span>)
-
-<span class='fu'>init_site</span>(<span class='kw'>pkg</span> <span class='kw'>=</span> <span class='st'>"."</span>)</pre>
+  <span class='kw'>seed</span> <span class='kw'>=</span> <span class='fl'>1014</span>, <span class='kw'>mathjax</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>, <span class='kw'>lazy</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='kw'>override</span> <span class='kw'>=</span> <span class='fu'>list</span>(),
+  <span class='kw'>preview</span> <span class='kw'>=</span> <span class='fu'>interactive</span>())</pre>
     
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a> Arguments</h2>
     <table class="ref-arguments">
     <colgroup><col class="name" /><col class="desc" /></colgroup>
     <tr>
       <th>pkg</th>
-      <td><p>Path to source package. If R working directory is not
-set to the source directory, then pkg must be a fully qualified
-path to the source directory (not a relative path).</p></td>
+      <td><p>Path to package.</p></td>
     </tr>
     <tr>
       <th>examples</th>
@@ -163,6 +163,11 @@ path to the source directory (not a relative path).</p></td>
     <tr>
       <th>run_dont_run</th>
       <td><p>Run examples that are surrounded in \dontrun?</p></td>
+    </tr>
+    <tr>
+      <th>seed</th>
+      <td><p>Seed used to initialize so that random examples are
+reproducible.</p></td>
     </tr>
     <tr>
       <th>mathjax</th>
@@ -174,31 +179,16 @@ path to the source directory (not a relative path).</p></td>
 if the source is newer than the destination.</p></td>
     </tr>
     <tr>
+      <th>override</th>
+      <td><p>An optional named list used to temporarily override
+values in <code>_pkgdown.yml</code></p></td>
+    </tr>
+    <tr>
       <th>preview</th>
       <td><p>If <code>TRUE</code>, or <code>is.na(preview) &amp;&amp; interactive()</code>, will preview
 freshly generated section in browser.</p></td>
     </tr>
-    <tr>
-      <th>seed</th>
-      <td><p>Seed used to initialize so that random examples are
-reproducible.</p></td>
-    </tr>
     </table>
-    
-    <h2 class="hasAnchor" id="custom-css-js"><a class="anchor" href="#custom-css-js"></a>Custom CSS/JS</h2>
-
-    
-    <p>If you want to do minor customisation of your pkgdown site, the easiest
-way is to add <code>pkgdown/extra.css</code> and <code>pkgdown/extra.js</code>. These
-will be automatically copied to <code>docs/</code> and inserted into the
-<code>&lt;HEAD&gt;</code> after the default pkgdown CSS and JSS.</p>
-    
-    <h2 class="hasAnchor" id="favicon"><a class="anchor" href="#favicon"></a>Favicon</h2>
-
-    
-    <p>If you include you package logo in the standard location of
-<code>man/figures/logo.png</code>, a favicon will be automatically created for
-you.</p>
     
     <h2 class="hasAnchor" id="yaml-config"><a class="anchor" href="#yaml-config"></a>YAML config</h2>
 
@@ -315,6 +305,8 @@ for pkgdown templates to ensure that you use the correct components.</p>
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
     <pre class="examples"><span class='co'># NOT RUN {</span>
 <span class='fu'>build_site</span>()
+
+<span class='fu'>build_site</span>(<span class='kw'>override</span> <span class='kw'>=</span> <span class='fu'>list</span>(<span class='kw'>destination</span> <span class='kw'>=</span> <span class='fu'>tempdir</span>()))
 <span class='co'># }</span></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="sidebar">
@@ -322,10 +314,6 @@ for pkgdown templates to ensure that you use the correct components.</p>
     <ul class="nav nav-pills nav-stacked">
       <li><a href="#arguments">Arguments</a></li>
       
-      <li><a href="#custom-css-js">Custom CSS/JS</a></li>
-
-      <li><a href="#favicon">Favicon</a></li>
-
       <li><a href="#yaml-config">YAML config</a></li>
 
       <li><a href="#yaml-config-navbar">YAML config - navbar</a></li>

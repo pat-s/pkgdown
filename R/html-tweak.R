@@ -1,3 +1,5 @@
+# Tag level tweaks --------------------------------------------------------
+
 tweak_anchors <- function(html, only_contents = TRUE) {
   if (only_contents) {
     sections <- xml2::xml_find_all(html, ".//div[@class='contents']//div[@id]")
@@ -67,93 +69,7 @@ tweak_tables <- function(html) {
   invisible()
 }
 
-# HTML from markdown/RMarkdown --------------------------------------------
-
-tweak_rmarkdown_html <- function(html, strip_header = FALSE) {
-  # Automatically link funtion mentions
-  tweak_code(html)
-  tweak_anchors(html, only_contents = FALSE)
-  tweak_md_links(html)
-
-  # Tweak classes of navbar
-  toc <- xml2::xml_find_all(html, ".//div[@id='tocnav']//ul")
-  xml2::xml_attr(toc, "class") <- "nav nav-pills nav-stacked"
-  # Remove unnused toc
-
-  if (strip_header) {
-    header <- xml2::xml_find_all(html, ".//div[contains(@class, 'page-header')]")
-    if (length(header) > 0)
-      xml2::xml_remove(header, free = TRUE)
-  }
-
-  tweak_tables(html)
-
-  invisible()
-}
-
-tweak_homepage_html <- function(html, strip_header = FALSE) {
-  first_para <- xml2::xml_find_first(html, "//p")
-  badges <- badges_extract(first_para)
-  if (length(badges) > 0) {
-    list <- list_with_heading(badges, "Dev status")
-    list_div <- paste0("<div>", list, "</div>")
-    list_html <- list_div %>% xml2::read_html() %>% xml2::xml_find_first(".//div")
-
-    sidebar <- html %>% xml2::xml_find_first(".//div[@id='sidebar']")
-    list_html %>%
-      xml2::xml_children() %>%
-      purrr::walk(~ xml2::xml_add_child(sidebar, .))
-
-    xml2::xml_remove(first_para)
-  }
-
-  header <- xml2::xml_find_first(html, ".//h1")
-  if (strip_header) {
-    xml2::xml_remove(header, free = TRUE)
-  } else {
-    page_header_text <- paste0("<div class='page-header'>", header, "</div>")
-    page_header <- xml2::read_html(page_header_text) %>% xml2::xml_find_first("//div")
-    xml2::xml_replace(header, page_header)
-  }
-
-  # Fix relative image links
-  imgs <- xml2::xml_find_all(html, ".//img")
-  urls <- xml2::xml_attr(imgs, "src")
-  new_urls <- gsub("^vignettes/", "articles/", urls)
-  new_urls <- gsub("^man/figures/", "reference/figures/", new_urls)
-  purrr::map2(imgs, new_urls, ~ (xml2::xml_attr(.x, "src") <- .y))
-
-  tweak_tables(html)
-
-  invisible()
-}
-
-badges_extract <- function(x) {
-  if (is.character(x)) {
-    x <- xml2::read_xml(x)
-  }
-
-  if (any(is.na(x))) {
-    return(character())
-  }
-
-  if (xml2::xml_text(x, trim = TRUE) != "") {
-    return(character())
-  }
-
-  badges <- xml2::xml_children(x)
-  if (length(badges) == 0) {
-    return(character())
-  }
-
-  if (!all(xml2::xml_name(badges) %in% "a")) {
-    return(character())
-  }
-
-  as.character(badges, options = character())
-}
-
-# code --------------------------------------------------------------------
+# Autolinking -------------------------------------------------------------
 
 # Assumes generated with rmarkdown (i.e. knitr + pandoc)
 tweak_code <- function(x) {
@@ -234,17 +150,110 @@ find_qualifier <- function(node) {
   rematch::re_match("([[:alnum:]]+)$", xml2::xml_text(qual))[, 2]
 }
 
-# Helper for testing
-autolink_html_ <- function(x, ...) {
-  x <- paste0("<html><body>", x, "</body></html>")
-  xml <- xml2::read_html(x)
+# File level tweaks --------------------------------------------
 
-  tweak_code(xml, ...)
+tweak_rmarkdown_html <- function(html, input_path) {
+  # Automatically link funtion mentions
+  tweak_code(html)
+  tweak_anchors(html, only_contents = FALSE)
+  tweak_md_links(html)
 
-  xml %>%
-    xml2::xml_find_first(".//body[1]") %>%
-    xml2::xml_children() %>%
-    as.character()
+  # Tweak classes of navbar
+  toc <- xml2::xml_find_all(html, ".//div[@id='tocnav']//ul")
+  xml2::xml_attr(toc, "class") <- "nav nav-pills nav-stacked"
+
+  # Mame sure all images use relative paths
+  img <- xml2::xml_find_all(html, "//img")
+  src <- xml2::xml_attr(img, "src")
+  abs_src <- is_absolute_path(src)
+  if (any(abs_src)) {
+    purrr::walk2(
+      img[abs_src],
+      path_rel(src[abs_src], input_path),
+      xml2::xml_set_attr,
+      attr = "src"
+    )
+  }
+
+  tweak_tables(html)
+
+  invisible()
 }
 
-strip_html_tags <- function(x) gsub("<.*?>", "", x)
+tweak_homepage_html <- function(html, strip_header = FALSE) {
+  first_para <- xml2::xml_find_first(html, "//p")
+  badges <- badges_extract(first_para)
+  if (length(badges) > 0) {
+    list <- sidebar_section("Dev status", badges)
+    list_div <- paste0("<div>", list, "</div>")
+    list_html <- list_div %>% xml2::read_html() %>% xml2::xml_find_first(".//div")
+
+    sidebar <- html %>% xml2::xml_find_first(".//div[@id='sidebar']")
+    list_html %>%
+      xml2::xml_children() %>%
+      purrr::walk(~ xml2::xml_add_child(sidebar, .))
+
+    xml2::xml_remove(first_para)
+  }
+
+  # Always remove dummy page header
+  header <- xml2::xml_find_all(html, ".//div[contains(@class, 'page-header')]")
+  if (length(header) > 0)
+    xml2::xml_remove(header, free = TRUE)
+
+  header <- xml2::xml_find_first(html, ".//h1")
+  if (strip_header) {
+    xml2::xml_remove(header, free = TRUE)
+  } else {
+    page_header_text <- paste0("<div class='page-header'>", header, "</div>")
+    page_header <- xml2::read_html(page_header_text) %>% xml2::xml_find_first("//div")
+    xml2::xml_replace(header, page_header)
+  }
+
+  # Fix relative image links
+  imgs <- xml2::xml_find_all(html, ".//img")
+  urls <- xml2::xml_attr(imgs, "src")
+  new_urls <- gsub("^vignettes/", "articles/", urls)
+  new_urls <- gsub("^man/figures/", "reference/figures/", new_urls)
+  purrr::map2(imgs, new_urls, ~ (xml2::xml_attr(.x, "src") <- .y))
+
+  tweak_tables(html)
+
+  invisible()
+}
+
+badges_extract <- function(x) {
+  if (is.character(x)) {
+    x <- xml2::read_xml(x)
+  }
+
+  if (any(is.na(x))) {
+    return(character())
+  }
+
+  if (xml2::xml_text(x, trim = TRUE) != "") {
+    return(character())
+  }
+
+  badges <- xml2::xml_children(x)
+  if (length(badges) == 0) {
+    return(character())
+  }
+
+  if (!all(xml2::xml_name(badges) %in% "a")) {
+    return(character())
+  }
+
+  as.character(badges, options = character())
+}
+
+# Update file on disk -----------------------------------------------------
+
+update_html <- function(path, tweak, ...) {
+  html <- xml2::read_html(path, encoding = "UTF-8")
+  tweak(html, ...)
+
+  xml2::write_html(html, path, format = FALSE)
+  path
+}
+

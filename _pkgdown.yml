@@ -6,6 +6,7 @@ reference:
     contents:
     - init_site
     - starts_with("build_")
+    - preview_site
   - title: Templates
     contents:
     - template_navbar
@@ -16,3 +17,6 @@ reference:
     - clean_site
     - as_pkgdown
     - in_pkgdown
+  - title: Regression tests
+    contents:
+    - starts_with("test", internal = TRUE)

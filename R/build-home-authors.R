@@ -60,7 +60,7 @@ data_home_sidebar_authors <- function(pkg = ".") {
     authors <- c(authors, "<a href='authors.html'>All authors...</li>")
   }
 
-  list_with_heading(authors, "Developers")
+  sidebar_section("Developers", authors)
 }
 
 build_authors <- function(pkg = ".") {
@@ -147,7 +147,7 @@ orcid_link <- function(orcid) {
 
   paste0(
     "<a href='https://orcid.org/", orcid, "' target='orcid.widget'>",
-    "<img src='https://members.orcid.org/sites/default/files/vector_iD_icon.svg' class='orcid'></a>"
+    "<img src='https://members.orcid.org/sites/default/files/vector_iD_icon.svg' class='orcid' height='16'></a>"
   )
 }
 
